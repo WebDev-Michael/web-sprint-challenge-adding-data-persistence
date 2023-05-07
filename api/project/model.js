@@ -1,25 +1,42 @@
 // build your `Project` model here
 const db = require('../../data/dbConfig')
 
-async function getAllProjects() {
-    const projects = await db('projects')
-    projects.forEach(
-        (project) => (project.project_completed = !!project.project_completed)
-    )
+
+async function getProjects() {
+  const projects = await db('projects')
+  const result = [];
+  projects.forEach(project => {
+      console.log(project);
+      if(project.project_completed === 1) {
+          result.push({...project, project_completed: true});
+      } else {
+          result.push({...project, project_completed: false});
+      }
+  })
+  return result
 }
 
-async function getProjectById(project_id) {
-    const [project] = await db('projects').where('project_id', id)
-    if(project) {
-        project.project_completed = project.project_completed
-    }
-    return project
+async function createProject(project) {
+  const [result] = await db('projects')
+      .insert(project)
+  const newProject = await findProjectById(result)
+  if(
+      newProject.project_completed > 0
+      || newProject.project_completed === true) {
+          return {...newProject, project_completed: true}
+  } else {
+      return {...newProject, project_completed: false}
+  }
 }
 
-async function postNewProject(project) {
-    const[id] = await db('prjects').insert(project)
-
-    const createdProject = await getProjectById(id)
-    return createdProject
+function findProjectById(project_id) {
+  return db('projects')
+      .where({project_id})
+      .first()
 }
-module.exports = { postNewProject, getProjectById, getAllProjects}
+
+module.exports = {
+  getProjects,
+  createProject,
+  findProjectById
+}

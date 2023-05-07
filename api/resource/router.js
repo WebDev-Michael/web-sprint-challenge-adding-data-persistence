@@ -1,40 +1,40 @@
 // build your `/api/resources` router here
-const router = require('express').Router()
-
+const express = require('express')
 const Resource = require('./model')
+const router = express.Router()
 
-router.get('/', async (req, res, next) => {
-    try{
-        const resources = await Resource.getAllResources()
+
+router.get('/', (req, res, next)=>{
+    Resource.getResources()
+    .then(resources=> {
         res.json(resources)
-    } catch (err) {
-        next(err)
-    }
-})
-
-router.get('/:resource_id', (req, res, next) => {
-    Project.getProjectById(req.params.resource_id)
-    .then(resource => {
-        res.status(200).json(resource)
     })
     .catch(next)
 })
-
-router.post('/', async (req, res, next) => {
-    try {
-        const newResource = await Resource.postNewResource(req.body)
-        res.status(201).json(newResource)
-    } catch (err) { 
-        next(err)
+router.post('/', (req, res) => {
+    const resource = req.body;
+  
+    if (!resource.resource_name) {
+      res.status(400).json({ message:  'RRESOURCE NAME is required' });
+    } else {
+      Resource.addResource(resource)
+        .then(newResource => {
+          res.status(201).json(newResource);
+        })
+        .catch(error => {
+          res.status(500).json({ 
+            message: 'Error adding resource',
+            error: error.message });
+        });
     }
-})
-
-router.use((err, req, res, next) => {
+  });
+  
+  router.use((err, req, res, next) => { //eslint-disable-line
     res.status(500).json({
-        customMessage: 'Something went horribly wrong inside the resource router',
-        message: err.message,
-        stack: err.stack
+      message: 'Error something went wrong in resource router.',
+      err: err.message,
+      stack: err.stack,
     })
-
-    module.exports = router
-})
+  })
+  
+module.exports = router

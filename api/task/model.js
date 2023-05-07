@@ -1,36 +1,26 @@
 // build your `Task` model here
 const db = require('../../data/dbConfig')
 
-async function getAllTasks() {
-    const tasks = await db('tasks as t')
-    .select(
-        't.task_id',
-        't.task_description',
-        't.task_completed',
-        't.task_notes',
-        'p.project_name',
-        'p.project_description'
-    )
-    .join('projects as p', 't.project_id', 'p.project_id')
-
-    tasks.forEach((task) => (task.task_completed = !!task.task_completed))
-    return tasks
+function getTasks() {
+  return db('tasks')
+    .join('projects', 'tasks.project_id', 'projects.project_id')
+    .select('tasks.task_id', 
+            'tasks.task_description', 
+            'tasks.task_notes', 
+            'tasks.task_completed', 
+            'projects.project_name', 
+            'projects.project_description');
 }
 
-
-async function getTaskById(task_id) {
-    const [task] = await db('tasks').where('task_id', id)
-
-    task.task_completed = !!task.task_completed
-
-    return task
+function addTask(task) {
+  return db('tasks')
+    .insert(task)
+    .then(ids => {
+      return db('tasks').where({ task_id: ids[0] }).first();
+    });
 }
 
-async function postNewTask() {
-    const [id] = await db('tasks').insert(task)
-
-    const createdTask = await getTaskById(id)
-    return createdTask
-}
-
-module.exports = { postNewTask, getTaskById, getAllTasks}
+module.exports = {
+  addTask,
+  getTasks,
+};
