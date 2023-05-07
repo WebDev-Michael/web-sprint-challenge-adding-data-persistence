@@ -1,40 +1,42 @@
-// build your `/api/resources` router here
-const express = require('express')
-const Resource = require('./model')
-const router = express.Router()
+const router = require('express').Router();
+const Resources = require('./model');
+const db = require('../../data/dbConfig');
 
-
-router.get('/', (req, res, next)=>{
-    Resource.getResources()
-    .then(resources=> {
-        res.json(resources)
-    })
-    .catch(next)
+router.get('/', (req, res, next) => {
+    Resources.getResources()
+    .then(resp =>{
+        res.json(resp)
+    }).catch(next)
 })
-router.post('/', (req, res) => {
-    const resource = req.body;
-  
-    if (!resource.resource_name) {
-      res.status(400).json({ message:  'RRESOURCE NAME is required' });
-    } else {
-      Resource.addResource(resource)
-        .then(newResource => {
-          res.status(201).json(newResource);
-        })
-        .catch(error => {
-          res.status(500).json({ 
-            message: 'Error adding resource',
-            error: error.message });
-        });
-    }
-  });
-  
-  router.use((err, req, res, next) => { //eslint-disable-line
-    res.status(500).json({
-      message: 'Error something went wrong in resource router.',
-      err: err.message,
-      stack: err.stack,
+
+router.post('/', (req, res, next) => {
+    Resources.getByName(req.body.resource_name)
+    .then(resp => {
+        if (resp.length !== 0) {
+            res.status(500).json({message:"Resource name must be unique"})
+        } else {
+            Resources.createResource(req.body)
+            .then(response => {
+                Resources.getById(response)
+                .then(newResource => {
+                    res.status(201).json(newResource[0])
+                })
+            }).catch(err => {
+                res.json({message: "error creating resource",
+            stack: err.stack})
+            })
+        }
     })
-  })
-  
+})
+
+
+
+router.use((err, req, res, next) => {
+    res.status(500).json({
+        message: "something went wrong in the resource router",
+        stack: err.stack
+    })
+})
+
+
 module.exports = router
